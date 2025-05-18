@@ -1,0 +1,24 @@
+# Example Checkov configuration
+# This file can be used to customize Checkov scans
+
+# A minimal valid YAML structure to avoid parsing errors
+{}
+# Exclude policies by ID
+# skip-check:
+#   - CKV_DOCKER_1 # Example: Skip check for running as root
+
+# Include only specific policies by ID
+# check:
+#   - CKV_NPM_1 # Example: Check for vulnerable npm packages
+
+# Exclude files or directories
+# skip-path:
+#   - "tests/*"
+
+# Configure output format
+# output:
+#   - cli
+#   - json
+
+# Configure logging level
+# log_level: INFO

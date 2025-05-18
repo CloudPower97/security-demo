@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Security Demo App</title>
+  </head>
+  <body>
+    <h1>Security Demo Application</h1>
+
+    <h2>Command Injection Demo</h2>
+    <form action="/command" method="POST">
+      <label for="command">Enter command:</label>
+      <input type="text" id="command" name="command" />
+      <button type="submit">Execute</button>
+    </form>
+
+    <h2>XSS Demo</h2>
+    <p>Visit <a href="/xss">/xss</a> to test the XSS vulnerability.</p>
+
+    <h2>Output:</h2>
+    <pre><%= output %></pre>
+  </body>
+  <!-- Insecure practice: Client-side rendering with potentially vulnerable libraries -->
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.min.js"></script> -->
+</html>
