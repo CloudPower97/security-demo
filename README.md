@@ -77,7 +77,7 @@ Use the following tools to identify vulnerabilities:
 - **Trivy:** Scan the Docker image for vulnerabilities.
 
   ```bash
-  trivy image --security-checks secret,vuln security-demo-node-app > trivy-results.txt
+  trivy image --security-checks secret,vuln security-demo-app > trivy-results.txt
   ```
 
 - **Snyk:** Scan the project for vulnerable dependencies and code issues.
