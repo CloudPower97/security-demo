@@ -17,6 +17,7 @@
  *  - ALLOWED_HOSTS: comma-separated list of permitted hostnames for /fetch
  */
 require('dotenv').config();
+const client = require('prom-client');
 const express = require('express');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
@@ -33,6 +34,28 @@ const https = require('https');
 const app = express();
 const port = process.env.PORT || 3000;
 const ALLOWED_HOSTS = (process.env.ALLOWED_HOSTS || '').split(',').filter(Boolean);
+
+// collect default metrics (CPU, memory, event loop, ecc.)
+client.collectDefaultMetrics({ timeout: 5000 });
+
+const httpRequests = new client.Counter({
+    name: 'http_requests_total',
+    help: 'Numero di richieste HTTP',
+    labelNames: ['method', 'route', 'status_code']
+});
+
+const httpDuration = new client.Histogram({
+    name: "app_request_duration_seconds",
+    help: "Request duration in seconds",
+    labelNames: ["method", "route", "status_code"],
+    buckets: [0.1, 0.3, 1, 5],
+});
+
+const errorCounter = new client.Counter({
+    name: "http_error_requests_total",
+    help: "Total HTTP 5xx error requests",
+    labelNames: ["method", "route", "status_code"],
+});
 
 // Vault helper function with secure token retrieval
 async function getStripeSecret() {
@@ -69,13 +92,55 @@ app.use(helmet());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
+app.use((req, res, next) => {
+    const end = httpDuration.startTimer({
+        method: req.method,
+        route: req.path,
+    });
+    res.on("finish", () => {
+        end({ status_code: res.statusCode });
+    });
+    next();
+});
+
+app.use((req, res, next) => {
+    const end = res.end;
+    res.end = function (chunk, encoding) {
+        httpRequests.inc({
+            method: req.method,
+            route: req.route ? req.route.path : req.path,
+            status_code: res.statusCode
+        });
+        end.apply(this, [chunk, encoding]);
+    };
+    next();
+});
+
+app.use((req, res, next) => {
+    const end = res.end;
+    res.end = function (chunk, encoding) {
+        if (res.statusCode >= 500) {
+            errorCounter.inc({
+                method: req.method,
+                route: req.route ? req.route.path : req.path,
+                status_code: res.statusCode,
+            });
+        }
+        httpRequests.inc({
+            /* existing counter code */
+        });
+        end.apply(this, [chunk, encoding]);
+    };
+    next();
+});
+
 // Global rate limiter to prevent DoS
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // limit each IP to 100 requests per window
     message: 'Too many requests, please try again later.',
 });
-app.use(limiter);
+// app.use(limiter);
 
 // View engine setup
 app.set('view engine', 'ejs');
@@ -195,6 +260,15 @@ app.get(
         }
     }
 );
+
+app.get('/metrics', async (req, res) => {
+    res.set('Content-Type', client.register.contentType);
+    res.end(await client.register.metrics());
+});
+
+app.get("/error", (req, res) => {
+    res.status(500).send("Internal Server Error");
+});
 
 // Generic error handler
 app.use((err, req, res, next) => {

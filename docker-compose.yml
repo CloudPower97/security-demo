@@ -1,16 +1,27 @@
+networks:
+  lab-net:
+    name: lab-network
+    external: true
+
 services:
-  app:
+  node-app:
     build: .
+    networks:
+      - lab-net
     ports:
-      - "3000:3000"
+      - "3001:3001"
     volumes:
       - .:/app
     depends_on:
       - vault
     environment:
+      - PORT=3001
       - VAULT_ADDR=http://vault:8200
+
   vault:
     image: hashicorp/vault:latest
+    networks:
+      - lab-net
     ports:
       - "8200:8200"
     environment:
