@@ -40,7 +40,7 @@ client.collectDefaultMetrics({ timeout: 5000 });
 
 const httpRequests = new client.Counter({
     name: 'http_requests_total',
-    help: 'Numero di richieste HTTP',
+    help: 'Number of HTTP requests',
     labelNames: ['method', 'route', 'status_code']
 });
 
@@ -48,7 +48,7 @@ const httpDuration = new client.Histogram({
     name: "app_request_duration_seconds",
     help: "Request duration in seconds",
     labelNames: ["method", "route", "status_code"],
-    buckets: [0.1, 0.3, 1, 5],
+    buckets: [0.1, 0.3, 1, 2, 3, 5],
 });
 
 const errorCounter = new client.Counter({
@@ -269,6 +269,14 @@ app.get('/metrics', async (req, res) => {
 app.get("/error", (req, res) => {
     res.status(500).send("Internal Server Error");
 });
+
+app.get("/delay", (req, res) => {
+    const delay = Math.random() * 2500;
+
+    setTimeout(() => {
+        res.sendStatus(200);
+    }, delay);
+})
 
 // Generic error handler
 app.use((err, req, res, next) => {
