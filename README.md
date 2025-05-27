@@ -10,7 +10,7 @@ This repository contains a simple Node.js application built with Express, intent
 - VS Code (recommended IDE)
 - CLI tools: Trivy, Snyk, Checkov, Vault (for the Vault example)
 
-For this specific branch please remind to create a the lab-network:
+For this specific branch please remind to create the lab-network:
 
 ```bash
 docker network create lab-network
